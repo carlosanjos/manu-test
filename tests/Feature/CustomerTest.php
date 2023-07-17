@@ -28,9 +28,6 @@ class CustomerTest extends TestCase
         $this->assertDatabaseHas('customers', ['name' => 'pong']);
     }
 
-    /**
-     * Don't work for some reason.
-     */
     public function testCustomerChunkedUpdatedClosure(): void
     {
         $customers = \App\Models\Customer::factory(1000)->create();
@@ -40,6 +37,18 @@ class CustomerTest extends TestCase
         $customers->chunk(100)->map(function ($customerChunk) {
             $customerChunk->each->update(["name"=> "pong"]);
         });
+
+        $this->assertCount(1000, $customers);
+        $this->assertDatabaseHas('customers', ['name' => 'pong']);
+    }
+
+    public function testCustomerChunkedUpdatedByQuery(): void
+    {
+        $customers = \App\Models\Customer::factory(1000)->create();
+
+        $this->assertCount(1000, $customers);
+
+        \App\Models\Customer::where('name', 'ping')->chunk(100, fn ($customerChunk) => $customerChunk->each->update(['name' => 'pong']));
 
         $this->assertCount(1000, $customers);
         $this->assertDatabaseHas('customers', ['name' => 'pong']);
